@@ -1,14 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
+  User,
+  GraduationCap,
+  Calendar,
+  CreditCard,
+  MapPin,
+  Briefcase,
+  Eye,
+  AlertCircle,
+  Sparkles,
+} from 'lucide-react';
+import {
   createEmployee,
   updateEmployee,
   getEmployeeById,
   getDepartments,
   getUnlinkedAccounts,
+  getNextEmployeeCode,
 } from '../../services/employeeApi';
 import Button from '../../components/Button/Button';
+import OnboardingEmailModal from '../../components/OnboardingEmailModal/OnboardingEmailModal';
 import { Department, EmployeeStatus, UserRole } from '../../types';
+import EmployeeCvSection from './EmployeeCvSection';
+import EmployeeAccountSection from './EmployeeAccountSection';
 
 interface UnlinkedAccount {
   id: number;
@@ -27,6 +42,23 @@ interface FormState {
   position: string;
   status: EmployeeStatus;
 
+  // Thông tin mở rộng hồ sơ
+  joinDate: string;
+  education: string;
+  major: string;
+  dob: string;
+  gender: 'nam' | 'nu' | 'khac';
+  idCard: string;
+  address: string;
+  cv?: {
+    name: string;
+    size?: number;
+    type?: string;
+    data?: string;
+    url?: string;
+    uploadedAt?: string;
+  } | null;
+
   // Trạng thái tài khoản
   accountId?: number | null;
   accountEmail?: string | null;
@@ -42,6 +74,8 @@ interface FormState {
   currentAccountPassword: string;
 }
 
+const generateRandomPassword = () => `VisionHR@${Math.floor(1000 + Math.random() * 9000)}`;
+
 const initialForm: FormState = {
   name: '',
   code: '',
@@ -51,15 +85,25 @@ const initialForm: FormState = {
   position: '',
   status: 'dang_lam_viec',
 
+  joinDate: new Date().toISOString().slice(0, 10),
+  education: 'Đại học',
+  major: '',
+  dob: '',
+  gender: 'nam',
+  idCard: '',
+  address: '',
+  cv: null,
+
   accountId: null,
   accountEmail: null,
   accountRole: null,
 
-  accountAction: 'none',
+  // Mặc định tự động bật cấp tài khoản khi thêm nhân sự mới
+  accountAction: 'create',
   linkAccountId: '',
   newAccountEmail: '',
   newAccountRole: 'employee',
-  newAccountPassword: '',
+  newAccountPassword: 'VisionHR@2026',
   currentAccountRole: 'employee',
   currentAccountPassword: '',
 };
@@ -73,6 +117,8 @@ export default function EmployeeForm() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [createdEmpData, setCreatedEmpData] = useState<any | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -91,21 +137,39 @@ export default function EmployeeForm() {
             position: emp.position || '',
             status: emp.status || 'dang_lam_viec',
 
+            joinDate: emp.joinDate ? emp.joinDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
+            education: emp.education || 'Đại học',
+            major: emp.major || '',
+            dob: emp.dob ? emp.dob.slice(0, 10) : '',
+            gender: (emp.gender as 'nam' | 'nu' | 'khac') || 'nam',
+            idCard: emp.idCard || '',
+            address: emp.address || '',
+            cv: emp.cv || null,
+
             accountId: emp.accountId || null,
             accountEmail: emp.accountEmail || null,
             accountRole: (emp.accountRole as UserRole) || 'employee',
 
-            accountAction: emp.accountId ? 'keep' : 'none',
+            accountAction: emp.accountId ? 'keep' : 'create',
             linkAccountId: '',
             newAccountEmail: emp.email || '',
             newAccountRole: 'employee',
-            newAccountPassword: '',
+            newAccountPassword: 'VisionHR@2026',
             currentAccountRole: (emp.accountRole as UserRole) || 'employee',
             currentAccountPassword: '',
           });
         })
         .catch(() => navigate('/employees'))
         .finally(() => setLoading(false));
+    } else {
+      // Khi thêm mới: Tự động lấy mã nhân viên tăng dần tiếp theo từ database
+      getNextEmployeeCode()
+        .then((res) => {
+          if (res?.nextCode) {
+            setForm((prev) => ({ ...prev, code: res.nextCode }));
+          }
+        })
+        .catch(() => {});
     }
   }, [id, isEdit, navigate]);
 
@@ -115,12 +179,38 @@ export default function EmployeeForm() {
     const value = e.target.value;
     setForm((prev) => {
       const next = { ...prev, [field]: value };
-      // Nếu thay đổi email nhân viên mà đang tạo tài khoản mới thì tự động gợi ý email tài khoản
-      if (field === 'email' && prev.accountAction === 'create' && !prev.newAccountEmail) {
+      if (field === 'email' && prev.accountAction === 'create') {
         next.newAccountEmail = value;
       }
       return next;
     });
+  };
+
+  const handleCvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Dung lượng tệp CV không được vượt quá 10MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((prev) => ({
+        ...prev,
+        cv: {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          data: reader.result as string,
+          uploadedAt: new Date().toISOString(),
+        },
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveCv = () => {
+    setForm((prev) => ({ ...prev, cv: null }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -128,7 +218,6 @@ export default function EmployeeForm() {
     setSaving(true);
     setErrorMsg('');
 
-    // Kiểm tra tính hợp lệ của tài khoản tạo mới
     if (form.accountAction === 'create') {
       if (!form.newAccountPassword || !form.newAccountPassword.trim()) {
         setErrorMsg('Vui lòng nhập mật khẩu khởi tạo cho tài khoản mới.');
@@ -148,10 +237,18 @@ export default function EmployeeForm() {
     try {
       if (isEdit && id) {
         await updateEmployee(id, form);
+        alert(`Cập nhật thông tin nhân viên "${form.name}" thành công!`);
+        navigate('/employees');
       } else {
-        await createEmployee(form);
+        const res = await createEmployee(form);
+        setCreatedEmpData(res);
+        if (res?.emailDelivery?.success) {
+          alert(`Thêm nhân viên "${form.name}" thành công! Đã tự động gửi email cấp tài khoản đến ${form.newAccountEmail || form.email}!`);
+        } else {
+          alert(`Thêm nhân viên "${form.name}" (${res?.code || form.code || ''}) thành công!`);
+        }
+        setShowEmailModal(true);
       }
-      navigate('/employees');
     } catch (err: any) {
       setErrorMsg(err?.response?.data?.message || 'Có lỗi xảy ra khi lưu thông tin.');
     } finally {
@@ -164,391 +261,310 @@ export default function EmployeeForm() {
   const hasExistingAccount = Boolean(form.accountId);
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{
-        maxWidth: 620,
-        background: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: 12,
-        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.05)',
-        padding: 28,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-      }}
-    >
-      <div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px 0', color: '#111827' }}>
-          {isEdit ? 'Chỉnh sửa nhân viên' : 'Thêm nhân viên mới'}
-        </h1>
-        <p style={{ color: '#6b7280', margin: 0, fontSize: 13 }}>
-          Điền thông tin hồ sơ nhân sự và thiết lập tài khoản đăng nhập hệ thống
-        </p>
-      </div>
-
-      {errorMsg && (
-        <div
-          style={{
-            background: '#fef2f2',
-            border: '1px solid #fecaca',
-            color: '#dc2626',
-            borderRadius: 8,
-            padding: '10px 14px',
-            fontSize: 13,
-          }}
-        >
-          {errorMsg}
-        </div>
-      )}
-
-      {/* Thông tin nhân sự cơ bản */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div>
-          <label style={labelStyle}>Họ và tên *</label>
-          <input
-            style={inputStyle}
-            placeholder="Ví dụ: Nguyễn Thị Hồng Mai"
-            value={form.name}
-            onChange={handleChange('name')}
-            required
-          />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div>
-            <label style={labelStyle}>Mã nhân viên *</label>
-            <input
-              style={inputStyle}
-              placeholder="NV004"
-              value={form.code}
-              onChange={handleChange('code')}
-              required
-            />
-          </div>
-          <div>
-            <label style={labelStyle}>Số điện thoại</label>
-            <input
-              style={inputStyle}
-              placeholder="0987 654 321"
-              value={form.phone}
-              onChange={handleChange('phone')}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label style={labelStyle}>Email nhân sự *</label>
-          <input
-            style={inputStyle}
-            placeholder="mai@company.com"
-            type="email"
-            value={form.email}
-            onChange={handleChange('email')}
-            required
-          />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div>
-            <label style={labelStyle}>Phòng ban</label>
-            <select style={inputStyle} value={form.departmentId} onChange={handleChange('departmentId')}>
-              <option value="">-- Chọn phòng ban --</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label style={labelStyle}>Chức vụ</label>
-            <input
-              style={inputStyle}
-              placeholder="Nhân viên bán hàng..."
-              value={form.position}
-              onChange={handleChange('position')}
-            />
-          </div>
-        </div>
-
-        {isEdit && (
-          <div>
-            <label style={labelStyle}>Trạng thái làm việc</label>
-            <select style={inputStyle} value={form.status} onChange={handleChange('status')}>
-              <option value="dang_lam_viec">Đang làm việc</option>
-              <option value="da_nghi_viec">Đã nghỉ việc</option>
-            </select>
-          </div>
-        )}
-      </div>
-
-      {/* KHU VỰC THIẾT LẬP / LIÊN KẾT TÀI KHOẢN ĐĂNG NHẬP */}
-      <div
+    <>
+      <form
+        onSubmit={handleSubmit}
         style={{
-          marginTop: 10,
-          background: '#f8fafc',
-          border: '1px solid #cbd5e1',
-          borderRadius: 10,
-          padding: 18,
+          maxWidth: 680,
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: 12,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+          padding: 28,
           display: 'flex',
           flexDirection: 'column',
-          gap: 14,
+          gap: 20,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 18 }}>🔐</span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-              Tài khoản đăng nhập hệ thống
-            </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px 0', color: '#111827' }}>
+              {isEdit ? 'Chỉnh sửa nhân viên' : 'Thêm nhân viên mới'}
+            </h1>
+            <p style={{ color: '#6b7280', margin: 0, fontSize: 13 }}>
+              Điền thông tin hồ sơ nhân sự, học vấn và thiết lập tài khoản đăng nhập
+            </p>
           </div>
-          {hasExistingAccount && (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#16a34a',
-                background: '#f0fdf4',
-                border: '1px solid #bbf7d0',
-                padding: '2px 8px',
-                borderRadius: 4,
-              }}
-            >
-              ✓ ĐÃ CÓ TÀI KHOẢN
-            </span>
-          )}
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setCreatedEmpData(form);
+              setShowEmailModal(true);
+            }}
+          >
+            <Eye size={14} style={{ marginRight: 6 }} />
+            Xem trước Email cấp TK
+          </Button>
         </div>
 
-        {hasExistingAccount ? (
-          // TRƯỜNG HỢP 1: NHÂN VIÊN ĐÃ CÓ TÀI KHOẢN
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: 8,
-                padding: '10px 14px',
-                fontSize: 13,
-                color: '#334155',
-              }}
-            >
-              <div>
-                <strong>Email đăng nhập:</strong>{' '}
-                <span style={{ color: '#2563eb', fontWeight: 600 }}>{form.accountEmail}</span>
-              </div>
-              <div style={{ marginTop: 4 }}>
-                <strong>Vai trò hiện tại:</strong>{' '}
-                <span style={{ textTransform: 'uppercase', fontWeight: 600, color: '#475569' }}>
-                  {form.accountRole}
-                </span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <label style={{ fontSize: 13, fontWeight: 500, color: '#334155', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input
-                  type="radio"
-                  name="accAction"
-                  checked={form.accountAction === 'keep' || form.accountAction === 'update'}
-                  onChange={() => setForm({ ...form, accountAction: 'update' })}
-                />
-                Duy trì / Cập nhật quyền & mật khẩu
-              </label>
-
-              <label style={{ fontSize: 13, fontWeight: 500, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input
-                  type="radio"
-                  name="accAction"
-                  checked={form.accountAction === 'unlink'}
-                  onChange={() => setForm({ ...form, accountAction: 'unlink' })}
-                />
-                Gỡ (Hủy liên kết) tài khoản khỏi nhân viên này
-              </label>
-            </div>
-
-            {form.accountAction !== 'unlink' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 4 }}>
-                <div>
-                  <label style={labelStyle}>Vai trò tài khoản</label>
-                  <select
-                    style={inputStyle}
-                    value={form.currentAccountRole}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        accountAction: 'update',
-                        currentAccountRole: e.target.value as UserRole,
-                      })
-                    }
-                  >
-                    <option value="employee">Nhân viên (Employee)</option>
-                    <option value="manager">Quản lý (Manager)</option>
-                    <option value="hr">Nhân sự (HR)</option>
-                    <option value="admin">Quản trị viên (Admin)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Đổi mật khẩu mới</label>
-                  <input
-                    style={inputStyle}
-                    type="password"
-                    placeholder="Để trống nếu không đổi"
-                    value={form.currentAccountPassword}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        accountAction: 'update',
-                        currentAccountPassword: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          // TRƯỜNG HỢP 2: NHÂN VIÊN CHƯA CÓ TÀI KHOẢN
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-              <label style={{ fontSize: 13, fontWeight: 500, color: '#475569', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="accActionNew"
-                  checked={form.accountAction === 'none'}
-                  onChange={() => setForm({ ...form, accountAction: 'none' })}
-                />
-                Chưa cấp tài khoản
-              </label>
-
-              {unlinkedAccounts.length > 0 && (
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="accActionNew"
-                    checked={form.accountAction === 'link'}
-                    onChange={() =>
-                      setForm({
-                        ...form,
-                        accountAction: 'link',
-                        linkAccountId: form.linkAccountId || unlinkedAccounts[0]?.id || '',
-                      })
-                    }
-                  />
-                  🔗 Liên kết với tài khoản có sẵn ({unlinkedAccounts.length} tài khoản chưa gắn NV)
-                </label>
-              )}
-
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#16a34a', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="accActionNew"
-                  checked={form.accountAction === 'create'}
-                  onChange={() =>
-                    setForm({
-                      ...form,
-                      accountAction: 'create',
-                      newAccountEmail: form.newAccountEmail || form.email,
-                    })
-                  }
-                />
-                + Cấp tài khoản mới ngay
-              </label>
-            </div>
-
-            {/* LỰA CHỌN A: LIÊN KẾT TÀI KHOẢN CÓ SẴN CHƯA GẮN NV */}
-            {form.accountAction === 'link' && (
-              <div
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #bfdbfe',
-                  borderRadius: 8,
-                  padding: 14,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                }}
-              >
-                <label style={{ ...labelStyle, color: '#1e40af' }}>
-                  Chọn tài khoản hệ thống để liên kết với nhân viên này:
-                </label>
-                <select
-                  style={{ ...inputStyle, borderColor: '#3b82f6', background: '#eff6ff' }}
-                  value={form.linkAccountId}
-                  onChange={(e) => setForm({ ...form, linkAccountId: e.target.value })}
-                >
-                  <option value="">-- Chọn tài khoản cần liên kết --</option>
-                  {unlinkedAccounts.map((acc) => (
-                    <option key={acc.id} value={acc.id}>
-                      {acc.email} ({acc.name} - Vai trò: {acc.role.toUpperCase()})
-                    </option>
-                  ))}
-                </select>
-                <span style={{ fontSize: 12, color: '#3b82f6' }}>
-                  💡 Tài khoản được chọn sẽ được gán độc quyền cho nhân viên này để đăng nhập vào VisionHR.
-                </span>
-              </div>
-            )}
-
-            {/* LỰA CHỌN B: TẠO TÀI KHOẢN MỚI */}
-            {form.accountAction === 'create' && (
-              <div
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #bbf7d0',
-                  borderRadius: 8,
-                  padding: 14,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                }}
-              >
-                <div>
-                  <label style={labelStyle}>Email đăng nhập *</label>
-                  <input
-                    style={inputStyle}
-                    type="email"
-                    placeholder="mai@gmail.com"
-                    value={form.newAccountEmail}
-                    onChange={(e) => setForm({ ...form, newAccountEmail: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <label style={labelStyle}>Vai trò *</label>
-                    <select
-                      style={inputStyle}
-                      value={form.newAccountRole}
-                      onChange={(e) => setForm({ ...form, newAccountRole: e.target.value as UserRole })}
-                    >
-                      <option value="employee">Nhân viên (Employee)</option>
-                      <option value="manager">Quản lý (Manager)</option>
-                      <option value="hr">Nhân sự (HR)</option>
-                      <option value="admin">Quản trị viên (Admin)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={labelStyle}>Mật khẩu đăng nhập *</label>
-                    <input
-                      style={inputStyle}
-                      type="password"
-                      placeholder="Mật khẩu tối thiểu 6 ký tự"
-                      value={form.newAccountPassword}
-                      onChange={(e) => setForm({ ...form, newAccountPassword: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+        {errorMsg && (
+          <div
+            style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#dc2626',
+              borderRadius: 8,
+              padding: '10px 14px',
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <AlertCircle size={16} />
+            <span>{errorMsg}</span>
           </div>
         )}
-      </div>
+
+        {/* NHÓM 1: THÔNG TIN CƠ BẢN VÀ CÔNG TÁC */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: '#184a8c',
+              borderBottom: '1px solid #e2e8f0',
+              paddingBottom: 6,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <Briefcase size={16} />
+            <span>THÔNG TIN VỊ TRÍ & LIÊN HỆ</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Họ và tên *</label>
+              <input
+                style={inputStyle}
+                placeholder="Ví dụ: Nguyễn Văn An"
+                value={form.name}
+                onChange={handleChange('name')}
+                required
+              />
+            </div>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                <label style={{ ...labelStyle, marginBottom: 0 }}>Mã nhân viên *</label>
+                {!isEdit && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const res = await getNextEmployeeCode();
+                        if (res?.nextCode) {
+                          setForm((prev) => ({ ...prev, code: res.nextCode }));
+                        }
+                      } catch (e) {}
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: 11,
+                      color: '#2563eb',
+                      background: '#eff6ff',
+                      border: '1px solid #bfdbfe',
+                      borderRadius: 4,
+                      padding: '2px 7px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                    title="Hệ thống tự động tăng dần mã nhân viên tiếp theo"
+                  >
+                    <Sparkles size={11} />
+                    <span>Tự động tăng ({form.code || '...'})</span>
+                  </button>
+                )}
+              </div>
+              <input
+                style={{
+                  ...inputStyle,
+                  background: !isEdit && form.code ? '#f8fafc' : '#ffffff',
+                  fontWeight: 600,
+                  letterSpacing: '0.5px',
+                  color: '#1e40af',
+                }}
+                placeholder="Tự động sinh (ví dụ: NV010)"
+                value={form.code}
+                onChange={handleChange('code')}
+                required
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Email nhân sự *</label>
+              <input
+                style={inputStyle}
+                placeholder="an.nguyen@visionhr.corp"
+                type="email"
+                value={form.email}
+                onChange={handleChange('email')}
+                required
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Số điện thoại</label>
+              <input
+                style={inputStyle}
+                placeholder="0987 654 321"
+                value={form.phone}
+                onChange={handleChange('phone')}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Phòng ban</label>
+              <select style={inputStyle} value={form.departmentId} onChange={handleChange('departmentId')}>
+                <option value="">-- Chọn phòng ban --</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Chức vụ</label>
+              <input
+                style={inputStyle}
+                placeholder="Kỹ sư phần mềm, Chuyên viên HR..."
+                value={form.position}
+                onChange={handleChange('position')}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Ngày vào làm *</label>
+              <input
+                style={inputStyle}
+                type="date"
+                value={form.joinDate}
+                onChange={handleChange('joinDate')}
+                required
+              />
+            </div>
+            {isEdit && (
+              <div>
+                <label style={labelStyle}>Trạng thái làm việc</label>
+                <select style={inputStyle} value={form.status} onChange={handleChange('status')}>
+                  <option value="dang_lam_viec">Đang làm việc</option>
+                  <option value="da_nghi_viec">Đã nghỉ việc</option>
+                </select>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* NHÓM 2: HỌC VẤN & THÔNG TIN CÁ NHÂN */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: '#184a8c',
+              borderBottom: '1px solid #e2e8f0',
+              paddingBottom: 6,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <GraduationCap size={16} />
+            <span>HỌC VẤN, BẰNG CẤP & ĐỊNH DANH CÁ NHÂN</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Bằng cấp / Trình độ</label>
+              <select style={inputStyle} value={form.education} onChange={handleChange('education')}>
+                <option value="Đại học">Đại học</option>
+                <option value="Thạc sĩ">Thạc sĩ</option>
+                <option value="Tiến sĩ">Tiến sĩ</option>
+                <option value="Cao đẳng">Cao đẳng</option>
+                <option value="Trung cấp">Trung cấp</option>
+                <option value="Chứng chỉ nghề">Chứng chỉ nghề</option>
+                <option value="Khác">Khác</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Chuyên ngành đào tạo</label>
+              <input
+                style={inputStyle}
+                placeholder="Công nghệ thông tin, Quản trị..."
+                value={form.major}
+                onChange={handleChange('major')}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Ngày sinh</label>
+              <input
+                style={inputStyle}
+                type="date"
+                value={form.dob}
+                onChange={handleChange('dob')}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Giới tính</label>
+              <select style={inputStyle} value={form.gender} onChange={handleChange('gender')}>
+                <option value="nam">Nam</option>
+                <option value="nu">Nữ</option>
+                <option value="khac">Khác</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Số CCCD / CMND</label>
+              <input
+                style={inputStyle}
+                placeholder="012345678901"
+                value={form.idCard}
+                onChange={handleChange('idCard')}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Địa chỉ thường trú / Nơi ở hiện tại</label>
+            <input
+              style={inputStyle}
+              placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/TP..."
+              value={form.address}
+              onChange={handleChange('address')}
+            />
+          </div>
+
+          {/* KHU VỰC TẢI HỒ SƠ ỨNG VIÊN & CV */}
+          <EmployeeCvSection
+            cv={form.cv}
+            onFileChange={handleCvFileChange}
+            onRemoveCv={handleRemoveCv}
+          />
+
+        </div>
+
+      {/* KHU VỰC THIẾT LẬP / LIÊN KẾT TÀI KHOẢN ĐĂNG NHẬP */}
+      <EmployeeAccountSection
+        form={form}
+        setForm={setForm}
+        hasExistingAccount={hasExistingAccount}
+        unlinkedAccounts={unlinkedAccounts}
+        generateRandomPassword={generateRandomPassword}
+        labelStyle={labelStyle}
+        inputStyle={inputStyle}
+      />
 
       <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
         <Button type="submit" disabled={saving}>
@@ -559,6 +575,29 @@ export default function EmployeeForm() {
         </Button>
       </div>
     </form>
+
+    <OnboardingEmailModal
+      isOpen={showEmailModal}
+      onClose={() => {
+        setShowEmailModal(false);
+        if (!isEdit && createdEmpData) {
+          navigate('/employees');
+        }
+      }}
+      employee={{
+        name: createdEmpData?.name || form.name || 'Nhân viên mới',
+        code: createdEmpData?.code || form.code || 'NV---',
+        email: createdEmpData?.email || form.email || 'employee@visionhr.corp',
+        position: createdEmpData?.position || form.position,
+        department:
+          departments.find((d) => String(d.id) === String(form.departmentId))?.name || undefined,
+        joinDate: form.joinDate,
+        accountEmail: form.accountAction === 'create' ? form.newAccountEmail : form.email,
+        accountRole: form.accountAction === 'create' ? form.newAccountRole : form.accountRole || 'employee',
+      }}
+      tempPassword={form.newAccountPassword || 'VisionHR@2026'}
+    />
+  </>
   );
 }
 

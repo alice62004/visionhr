@@ -11,12 +11,30 @@ export interface Employee {
   position?: string;
   status: EmployeeStatus;
   joinDate?: string;
+  education?: string;
+  major?: string;
+  dob?: string;
+  gender?: 'nam' | 'nu' | 'khac';
+  idCard?: string;
+  address?: string;
   hasFace?: boolean | number;
   faceData?: any;
   face_data?: any;
   accountId?: number | null;
   accountEmail?: string | null;
   accountRole?: UserRole | null;
+  cv?: {
+    name: string;
+    size?: number;
+    type?: string;
+    data?: string;
+    url?: string;
+    uploadedAt?: string;
+  } | null;
+  emailDelivery?: {
+    success: boolean;
+    message?: string;
+  };
 }
 
 export interface Department {
@@ -48,11 +66,20 @@ export interface AttendanceRecord {
   id: number;
   employeeId?: number;
   employeeName?: string;
+  employeeCode?: string;
+  department?: string;
+  position?: string;
   date: string;
   checkIn?: string | null;
   checkOut?: string | null;
   status: AttendanceStatus;
   method: AttendanceMethod;
+  shiftName?: string;
+  avatar?: string | null;
+  snapshotImage?: string | null;
+  inImage?: string | null;
+  outImage?: string | null;
+  hasRealSnapshot?: boolean;
 }
 
 export type LeaveStatus = 'cho_duyet' | 'da_duyet' | 'tu_choi';
@@ -72,6 +99,8 @@ export type OvertimeStatus = 'cho_duyet' | 'da_duyet' | 'tu_choi';
 
 export interface OvertimeRequest {
   id: number;
+  employeeId?: number;
+  employeeCode?: string;
   employeeName?: string;
   date: string;
   hours: number;

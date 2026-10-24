@@ -528,7 +528,21 @@ export default function Departments() {
                 </thead>
                 <tbody>
                   {filteredDeptEmployees.map((emp) => (
-                    <tr key={emp.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <tr
+                      key={emp.id}
+                      onClick={() => {
+                        setEmpModalOpen(false);
+                        navigate(`/employees/${emp.id}`);
+                      }}
+                      style={{
+                        borderBottom: '1px solid #f1f5f9',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f8fafc')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                      title="Bấm vào hàng để mở ngay chi tiết nhân viên"
+                    >
                       <td style={{ padding: '8px 10px', fontWeight: 600, color: '#2563eb' }}>{emp.code}</td>
                       <td style={{ padding: '8px 10px', fontWeight: 500, color: '#0f172a' }}>{emp.name}</td>
                       <td style={{ padding: '8px 10px', color: '#475569' }}>{emp.position || 'Nhân viên'}</td>
@@ -588,7 +602,8 @@ export default function Departments() {
                           {!emp.hasFace && canEdit && (
                             <button
                               type="button"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setEmpModalOpen(false);
                                 navigate(`/employees/${emp.id}/face-enrollment`);
                               }}
@@ -608,7 +623,8 @@ export default function Departments() {
                           )}
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setEmpModalOpen(false);
                               navigate(`/employees/${emp.id}`);
                             }}

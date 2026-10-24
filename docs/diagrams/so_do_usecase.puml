@@ -1,0 +1,121 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam roundcorner 8
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam linetype ortho
+
+skinparam actor {
+    BackgroundColor #EFF6FF
+    BorderColor #1E3A8A
+    FontColor #0F172A
+    FontStyle bold
+}
+
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #2563EB
+    BorderThickness 1.2
+    FontColor #0F172A
+    ArrowColor #475569
+}
+
+skinparam package {
+    BackgroundColor #F8FAFC
+    BorderColor #94A3B8
+    FontColor #1E293B
+    FontStyle bold
+}
+
+actor "Nhân viên\n(Employee)" as Employee #E0F2FE
+actor "Quản lý\n(Manager)" as Manager #FEF9C3
+actor "Nhân sự\n(HR)" as HR #DCFCE7
+actor "Quản trị viên\n(Admin)" as Admin #FEE2E2
+actor "Dịch vụ AI & Kiosk\n(Vision AI Service)" as AISystem #FEF3C7
+
+' Phân cấp kế thừa vai trò (Role Inheritance)
+Admin -|> HR
+HR -|> Manager
+Manager -|> Employee
+
+rectangle "HỆ THỐNG QUẢN TRỊ NHÂN SỰ & CHẤM CÔNG THÔNG MINH VISIONHR" {
+
+    package "1. Phân hệ Nhân viên (Self-Service)" {
+        usecase "UC01: Đăng nhập hệ thống" as UC_Login
+        usecase "UC_Auth: Xác thực tài khoản & JWT" as UC_Auth
+        usecase "UC02: Đổi mật khẩu cá nhân" as UC_ChangePass
+        usecase "UC03: Xem hồ sơ & Lịch sử làm việc" as UC_ViewProfile
+        usecase "UC04: Gửi đơn xin nghỉ phép" as UC_Leave
+        usecase "UC05: Gửi đơn đăng ký tăng ca (OT)" as UC_OT
+        usecase "UC06: Hỏi đáp với Trợ lý AI (HR Agent)" as UC_AIHelp
+        
+        UC_Login ..> UC_Auth : <<include>>
+    }
+
+    package "2. Phân hệ Chấm công Kiosk AI" {
+        usecase "UC07: Điểm danh khuôn mặt tại Kiosk" as UC_Checkin
+        usecase "UC_Detect: Nhận diện khuôn mặt ArcFace" as UC_Detect
+        usecase "UC_Liveness: Chống giả mạo Face Liveness" as UC_Liveness
+        
+        UC_Checkin ..> UC_Detect : <<include>>
+        UC_Checkin ..> UC_Liveness : <<include>>
+    }
+
+    package "3. Phân hệ Quản lý & Phê duyệt (Dành cho Manager)" {
+        usecase "UC08: Phê duyệt đơn nghỉ phép & Tăng ca" as UC_Approve
+        usecase "UC09: Theo dõi bảng công phòng ban" as UC_DeptAttendance
+        usecase "UC10: Xem danh sách nhân viên phòng ban" as UC_DeptEmployees
+    }
+
+    package "4. Phân hệ Nhân sự & Sinh trắc học (Dành cho HR)" {
+        usecase "UC11: Quản lý hồ sơ nhân sự\n(Thêm, sửa, xem, xóa nhân viên)" as UC_ManageEmp
+        usecase "UC12: Đăng ký & Cập nhật khuôn mặt nhân viên\n(Chụp trực tiếp tại văn phòng HR)" as UC_FaceEnroll
+        usecase "UC_DupCheck: Kiểm tra chống trùng lặp khuôn mặt\n(Cosine Similarity >= 0.40)" as UC_DupCheck
+        usecase "UC13: Cấp tài khoản & Gửi email chào mừng\n(Gửi thật qua SMTP / Giả lập Demo)" as UC_SendEmail
+        usecase "UC14: Quản lý cơ cấu phòng ban" as UC_Departments
+        usecase "UC15: Quản lý phân ca làm việc (Shifts)" as UC_Shifts
+        usecase "UC16: Tổng hợp & Xuất báo cáo chấm công" as UC_Reports
+        
+        UC_FaceEnroll ..> UC_DupCheck : <<include>>
+    }
+
+    package "5. Phân hệ Quản trị hệ thống (Dành cho Admin)" {
+        usecase "UC17: Quản lý người dùng & Phân quyền" as UC_Users
+        usecase "UC18: Cấu hình hệ thống & Tham số AI" as UC_Config
+    }
+}
+
+' Liên kết Nhân viên (Employee)
+Employee --> UC_Login
+Employee --> UC_ChangePass
+Employee --> UC_ViewProfile
+Employee --> UC_Leave
+Employee --> UC_OT
+Employee --> UC_AIHelp
+Employee --> UC_Checkin
+
+' Liên kết Quản lý (Manager)
+Manager --> UC_Approve
+Manager --> UC_DeptAttendance
+Manager --> UC_DeptEmployees
+
+' Liên kết Nhân sự (HR)
+HR --> UC_ManageEmp
+HR --> UC_FaceEnroll
+HR --> UC_SendEmail
+HR --> UC_Departments
+HR --> UC_Shifts
+HR --> UC_Reports
+
+' Liên kết Quản trị viên (Admin)
+Admin --> UC_Users
+Admin --> UC_Config
+
+' Liên kết Dịch vụ Vision AI bên ngoài
+AISystem --> UC_Detect
+AISystem --> UC_Liveness
+AISystem --> UC_DupCheck
+
+@enduml

@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const Employee = require('../models/Employee');
 const User = require('../models/User');
 const { detectFace, checkDuplicateFace } = require('../services/faceRecognitionService');
+const { sendOnboardingEmail } = require('../services/emailService');
+const pool = require('../config/db');
 
 function computeImageHash(base64Str) {
   if (!base64Str) return '';
@@ -11,14 +13,24 @@ function computeImageHash(base64Str) {
 }
 
 async function getEmployees(req, res) {
-  const employees = await Employee.findAll();
-  res.json(employees);
+  try {
+    const employees = await Employee.findAll();
+    res.json(employees);
+  } catch (err) {
+    console.error('[EmployeeController] getEmployees error:', err);
+    res.status(500).json({ message: 'Lỗi khi lấy danh sách nhân viên: ' + err.message });
+  }
 }
 
 async function getEmployeeById(req, res) {
-  const employee = await Employee.findById(req.params.id);
-  if (!employee) return res.status(404).json({ message: 'Không tìm thấy nhân viên.' });
-  res.json(employee);
+  try {
+    const employee = await Employee.findById(req.params.id);
+    if (!employee) return res.status(404).json({ message: 'Không tìm thấy nhân viên.' });
+    res.json(employee);
+  } catch (err) {
+    console.error('[EmployeeController] getEmployeeById error:', err);
+    res.status(500).json({ message: 'Lỗi khi lấy chi tiết nhân viên: ' + err.message });
+  }
 }
 
 async function getUnlinkedAccounts(req, res) {
@@ -45,18 +57,23 @@ async function createEmployee(req, res) {
       newAccountPassword,
     } = req.body;
 
-    if (!code || !name || !email) {
-      return res.status(400).json({ message: 'Vui lòng điền đầy đủ Mã nhân viên, Họ tên và Email.' });
+    if (!name || !email) {
+      return res.status(400).json({ message: 'Vui lòng điền đầy đủ Họ tên và Email.' });
     }
 
-    const cleanCode = code.trim();
+    let cleanCode = code ? code.trim() : '';
+    if (!cleanCode || cleanCode.toUpperCase() === 'AUTO') {
+      cleanCode = await Employee.getNextCode();
+      req.body.code = cleanCode;
+    } else {
+      // Kiểm tra trùng mã nhân viên nếu người dùng tự nhập
+      const existingCode = await Employee.findByCode(cleanCode);
+      if (existingCode) {
+        return res.status(400).json({ message: `Mã nhân viên "${cleanCode}" đã tồn tại trên hệ thống (${existingCode.name}).` });
+      }
+    }
+
     const cleanEmail = email.trim().toLowerCase();
-
-    // Kiểm tra trùng mã nhân viên
-    const existingCode = await Employee.findByCode(cleanCode);
-    if (existingCode) {
-      return res.status(400).json({ message: `Mã nhân viên "${cleanCode}" đã tồn tại trên hệ thống (${existingCode.name}).` });
-    }
 
     // Kiểm tra trùng email
     const existingEmail = await Employee.findByEmail(cleanEmail);
@@ -87,9 +104,32 @@ async function createEmployee(req, res) {
         role: newAccountRole || 'employee',
         employeeId: employee.id,
       });
+
+      // Tự động gửi Email thật cấp tài khoản cho nhân viên
+      try {
+        const empCode = employee.code || req.body.code;
+        const empDept = employee.department || 'VisionHR';
+        const emailRes = await sendOnboardingEmail({
+          to: accEmail,
+          employeeName: name.trim(),
+          employeeCode: empCode,
+          position: req.body.position || 'Nhân viên',
+          department: empDept,
+          tempPassword: newAccountPassword.trim(),
+          loginUrl: 'http://localhost:5173/login',
+        });
+        employee.emailDelivery = emailRes;
+        console.log(`[EmployeeController] Auto-sent real onboarding email to ${accEmail}:`, emailRes.message);
+      } catch (emailErr) {
+        console.warn(`[EmployeeController] Auto email warning:`, emailErr.message);
+        employee.emailDelivery = { success: false, message: emailErr.message };
+      }
     }
 
     const result = await Employee.findById(employee.id);
+    if (employee.emailDelivery) {
+      result.emailDelivery = employee.emailDelivery;
+    }
     res.status(201).json(result);
   } catch (err) {
     console.error('[EmployeeController] createEmployee error:', err);
@@ -211,7 +251,20 @@ async function deleteEmployee(req, res) {
 async function enrollFace(req, res) {
   try {
     const { imageBase64, employeeId } = req.body;
-    const targetId = Number(req.params.id || employeeId || req.user?.employeeId || req.user?.id);
+    let targetId;
+    if (req.user?.role === 'employee') {
+      if (!req.user.employeeId) {
+        return res.status(400).json({ message: 'Tài khoản chưa được liên kết với hồ sơ nhân viên trong hệ thống.' });
+      }
+      targetId = Number(req.user.employeeId);
+    } else {
+      targetId = Number(req.params.id || employeeId || req.user?.employeeId);
+    }
+
+    if (!targetId) {
+      return res.status(400).json({ message: 'Không xác định được nhân viên cần đăng ký khuôn mặt.' });
+    }
+
     if (!imageBase64) return res.status(400).json({ message: 'Thiếu dữ liệu ảnh khuôn mặt.' });
 
     const employee = await Employee.findById(targetId);
@@ -278,6 +331,7 @@ async function enrollFace(req, res) {
     // 3. Gán khuôn mặt độc quyền cho nhân viên này
     const faceData = {
       image: faceToSave,           // Ảnh crop (dùng để so khớp khi chấm công)
+      embedding: detection.embedding || null, // Vector ArcFace 512-dim để so khớp siêu tốc
       originalHash,                // Hash ảnh gốc (check trùng nhanh)
       cropHash,                    // Hash ảnh crop (check trùng nhanh)
       registered_at: new Date().toISOString(),
@@ -308,13 +362,158 @@ async function deleteFaceEnrollment(req, res) {
   res.json({ message: `Đã xóa dữ liệu khuôn mặt của nhân viên ${employee.name}.` });
 }
 
+async function getMyProfile(req, res) {
+  try {
+    let employee = null;
+    if (req.user && req.user.employeeId) {
+      employee = await Employee.findById(req.user.employeeId);
+    }
+    if (!employee && req.user && req.user.id) {
+      employee = await Employee.findByAccountId(req.user.id);
+    }
+    if (!employee) {
+      return res.status(404).json({ message: 'Tài khoản chưa được liên kết với hồ sơ nhân viên nào trong hệ thống.' });
+    }
+    res.json(employee);
+  } catch (err) {
+    console.error('[EmployeeController] getMyProfile error:', err);
+    res.status(500).json({ message: 'Lỗi khi lấy thông tin hồ sơ cá nhân: ' + err.message });
+  }
+}
+
+async function updateMyProfile(req, res) {
+  try {
+    let employee = null;
+    if (req.user && req.user.employeeId) {
+      employee = await Employee.findById(req.user.employeeId);
+    }
+    if (!employee && req.user && req.user.id) {
+      employee = await Employee.findByAccountId(req.user.id);
+    }
+    if (!employee) {
+      return res.status(404).json({ message: 'Tài khoản chưa được liên kết với hồ sơ nhân viên nào trong hệ thống.' });
+    }
+
+    const { phone, address, dob, gender, idCard, education, major, cv } = req.body;
+
+    const updatePayload = {
+      code: employee.code,
+      name: employee.name,
+      email: employee.email,
+      phone: phone !== undefined ? phone : employee.phone,
+      departmentId: employee.department_id,
+      position: employee.position,
+      status: employee.status,
+      joinDate: employee.joinDate,
+      education: education !== undefined ? education : employee.education,
+      major: major !== undefined ? major : employee.major,
+      dob: dob !== undefined ? dob : employee.dob,
+      gender: gender !== undefined ? gender : employee.gender,
+      idCard: idCard !== undefined ? idCard : employee.idCard,
+      address: address !== undefined ? address : employee.address,
+      cv: cv !== undefined ? cv : employee.cv,
+    };
+
+    await Employee.update(employee.id, updatePayload);
+
+    // Lưu vào nhật ký hệ thống
+    try {
+      await pool.query(
+        'INSERT INTO nhat_ky_he_thong (ma_tai_khoan, hanh_dong, chuc_nang) VALUES (?, ?, ?)',
+        [req.user.id, `Nhân viên ${employee.name} (${employee.code}) cập nhật thông tin hồ sơ cá nhân`, 'Hồ sơ cá nhân']
+      );
+    } catch {}
+
+    const updated = await Employee.findById(employee.id);
+    res.json(updated);
+  } catch (err) {
+    console.error('[EmployeeController] updateMyProfile error:', err);
+    res.status(500).json({ message: 'Lỗi khi cập nhật hồ sơ cá nhân: ' + err.message });
+  }
+}
+
+async function getMyWorkHistory(req, res) {
+  try {
+    let employee = null;
+    if (req.user && req.user.employeeId) {
+      employee = await Employee.findById(req.user.employeeId);
+    }
+    if (!employee && req.user && req.user.id) {
+      employee = await Employee.findByAccountId(req.user.id);
+    }
+    if (!employee) {
+      return res.status(404).json({ message: 'Tài khoản chưa được liên kết với hồ sơ nhân viên nào trong hệ thống.' });
+    }
+
+    const Attendance = require('../models/Attendance');
+    const Leave = require('../models/Leave');
+    const Overtime = require('../models/Overtime');
+
+    const [attendance, leaves, overtimes] = await Promise.all([
+      Attendance.findByEmployeeId(employee.id),
+      Leave.findByEmployeeId(employee.id),
+      Overtime.findByEmployeeId(employee.id),
+    ]);
+
+    res.json({
+      employee,
+      attendance,
+      leaves,
+      overtimes,
+    });
+  } catch (err) {
+    console.error('[EmployeeController] getMyWorkHistory error:', err);
+    res.status(500).json({ message: 'Lỗi khi lấy lịch sử làm việc: ' + err.message });
+  }
+}
+
+async function getNextEmployeeCode(req, res) {
+  try {
+    const nextCode = await Employee.getNextCode();
+    res.json({ nextCode });
+  } catch (err) {
+    console.error('[EmployeeController] getNextEmployeeCode error:', err);
+    res.status(500).json({ message: 'Lỗi khi lấy mã nhân viên tự động: ' + err.message });
+  }
+}
+
+async function sendEmployeeOnboardingEmail(req, res) {
+  try {
+    const { to, employeeName, employeeCode, position, department, tempPassword, loginUrl } = req.body;
+    if (!to) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp địa chỉ email người nhận.' });
+    }
+
+    const result = await sendOnboardingEmail({
+      to,
+      employeeName: employeeName || 'Nhân viên',
+      employeeCode: employeeCode || 'NV',
+      position,
+      department,
+      tempPassword,
+      loginUrl: loginUrl || 'http://localhost:5173/login',
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error('[EmployeeController] sendEmployeeOnboardingEmail error:', err);
+    res.status(500).json({ message: 'Không thể gửi email: ' + err.message });
+  }
+}
+
 module.exports = {
   getEmployees,
   getEmployeeById,
+  getNextEmployeeCode,
   getUnlinkedAccounts,
   createEmployee,
   updateEmployee,
   deleteEmployee,
   enrollFace,
   deleteFaceEnrollment,
+  getMyProfile,
+  updateMyProfile,
+  getMyWorkHistory,
+  sendEmployeeOnboardingEmail,
 };
+

@@ -12,6 +12,20 @@ const Leave = {
     return rows;
   },
 
+  async findByEmployeeId(employeeId) {
+    const [rows] = await pool.query(
+      `SELECT l.ma_don AS id, l.ma_nhan_vien AS employeeId, e.ho_ten AS employeeName,
+              l.loai_phep AS type, l.tu_ngay AS fromDate, l.den_ngay AS toDate,
+              l.ly_do AS reason, l.trang_thai AS status, l.ly_do_tu_choi AS reject_reason,
+              l.ngay_tao AS createdAt
+       FROM don_nghi_phep l JOIN nhan_vien e ON e.ma_nhan_vien = l.ma_nhan_vien
+       WHERE l.ma_nhan_vien = ?
+       ORDER BY l.ngay_tao DESC`,
+      [employeeId]
+    );
+    return rows;
+  },
+
   async create({ employeeId, type, fromDate, toDate, reason }) {
     const [result] = await pool.query(
       `INSERT INTO don_nghi_phep (ma_nhan_vien, loai_phep, tu_ngay, den_ngay, ly_do, trang_thai)

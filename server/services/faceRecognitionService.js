@@ -32,7 +32,7 @@ async function detectFace(imageBase64) {
     const { data } = await axios.post(
       `${AI_SERVICE_URL}/detect-face`,
       { imageBase64 },
-      { timeout: 3500 }
+      { timeout: 8000 }
     );
     return data;
   } catch (err) {
@@ -112,7 +112,7 @@ async function checkDuplicateFace(imageBase64, candidates = [], targetEmployeeId
         candidates,
         targetEmployeeId: targetEmployeeId ? Number(targetEmployeeId) : null,
       },
-      { timeout: 4000 }
+      { timeout: 8000 }
     );
 
     if (data && data.isDuplicate) {
@@ -151,9 +151,9 @@ async function matchFace(croppedFace, candidates = []) {
     const { data } = await axios.post(
       `${AI_SERVICE_URL}/match-face`,
       { croppedFace, candidates: normalizedCandidates },
-      { timeout: 5000 }
+      { timeout: 8000 }
     );
-    if (data && data.employeeId && data.confidence >= 0.55) {
+    if (data && data.employeeId) {
       return data;
     }
   } catch (err) {

@@ -1,3 +1,42 @@
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Environment & Secret Credentials (BẢO MẬT)
 .env
+.env.local
+.env.*.local
+server/config/smtp.json
+
+# Build outputs
+client/dist/
+dist/
+build/
+
+# Uploads & Data runtime
+server/uploads/
+server/data/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Executables & Binaries
+*.exe
+cloudflared.exe
+
+# Logs & Docs tạm
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 *.docx
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

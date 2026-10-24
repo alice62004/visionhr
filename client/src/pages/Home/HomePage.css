@@ -1,0 +1,824 @@
+/* =========================================================
+   VisionHR - Clean & Informative Portal Homepage
+   Modern SaaS Aesthetic, High Contrast, High Usability
+========================================================= */
+
+.vhr-simple-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #1e293b;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* ================= Navbar ================= */
+.vhr-simple-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: linear-gradient(180deg, #184a8c 0%, #153e77 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 12px rgba(15, 45, 85, 0.15);
+}
+
+.vhr-nav-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+
+.vhr-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.vhr-brand-logo-sq {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #184a8c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.vhr-brand-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vhr-brand-name {
+  font-size: 19px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.vhr-brand-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(37, 99, 235, 0.25);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.vhr-nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vhr-menu-item {
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.vhr-menu-item:hover {
+  color: #ffffff;
+}
+
+.vhr-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vhr-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.vhr-nav-btn.kiosk-btn {
+  background: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.vhr-nav-btn.kiosk-btn:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.vhr-nav-btn.primary-btn {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.vhr-nav-btn.primary-btn:hover {
+  background: #1d4ed8;
+}
+
+.vhr-nav-btn.outline-btn {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.vhr-nav-btn.outline-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.vhr-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  white-space: nowrap;
+}
+
+.vhr-user-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.vhr-user-role {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #93c5fd;
+  background: rgba(37, 99, 235, 0.3);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+/* ================= Main Container ================= */
+.vhr-simple-main {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 56px 24px 64px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+
+/* Welcome Header */
+.vhr-welcome-header {
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.vhr-pill {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 5px 16px;
+  border-radius: 999px;
+  margin-bottom: 16px;
+}
+
+.vhr-title {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #0f172a;
+  margin: 0 0 14px 0;
+  letter-spacing: -0.5px;
+}
+
+.vhr-gradient {
+  background: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.vhr-subtitle {
+  font-size: 15.5px;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ================= 3 Portal Cards ================= */
+.vhr-portal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.vhr-portal-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  position: relative;
+}
+
+.vhr-portal-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
+
+.vhr-card-icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin-bottom: 16px;
+}
+
+.kiosk-bg {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.dashboard-bg {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.ai-bg {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+.vhr-card-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.vhr-card-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 10px 0;
+}
+
+.vhr-card-desc {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #475569;
+  margin: 0 0 24px 0;
+  flex: 1;
+}
+
+.vhr-card-action {
+  margin-top: auto;
+}
+
+.vhr-card-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.kiosk-action-btn {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.kiosk-action-btn:hover {
+  background: #15803d;
+}
+
+.primary-action-btn {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.primary-action-btn:hover {
+  background: #1d4ed8;
+}
+
+.ai-action-btn {
+  background: #9333ea;
+  color: #ffffff;
+}
+
+.ai-action-btn:hover {
+  background: #7e22ce;
+}
+
+/* ================= Feature Highlights Strip ================= */
+.vhr-feature-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.vhr-feature-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vhr-feat-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.vhr-feature-pill strong {
+  display: block;
+  font-size: 13px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.vhr-feature-pill small {
+  display: block;
+  font-size: 11.5px;
+  color: #64748b;
+  line-height: 1.3;
+}
+
+/* ================= Section Header Layout ================= */
+.vhr-section-box {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.vhr-section-title-wrap {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.vhr-section-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.vhr-section-h2 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.4px;
+}
+
+.vhr-section-desc {
+  font-size: 14.5px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ================= 6 Modules Grid ================= */
+.vhr-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.vhr-module-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.vhr-module-item:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 6px 16px -2px rgba(37, 99, 235, 0.08);
+}
+
+.vhr-module-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.vhr-module-icon {
+  font-size: 22px;
+  width: 40px;
+  height: 40px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vhr-module-head h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.vhr-module-item p {
+  font-size: 13.5px;
+  color: #475569;
+  line-height: 1.55;
+  margin: 0 0 16px 0;
+}
+
+.vhr-module-bullets {
+  margin: auto 0 0 0;
+  padding-left: 18px;
+  list-style-type: disc;
+  color: #64748b;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.vhr-module-bullets li {
+  margin-bottom: 4px;
+}
+
+/* ================= Workflow & Roles ================= */
+.vhr-role-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 6px;
+  border-radius: 12px;
+  max-width: 780px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.vhr-role-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.vhr-role-tab:hover {
+  color: #1e293b;
+  background: #f8fafc;
+}
+
+.vhr-role-tab.active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.vhr-role-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 32px 28px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.vhr-flow-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.vhr-flow-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.vhr-flow-num {
+  width: 32px;
+  height: 32px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.vhr-flow-step h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+}
+
+.vhr-flow-step p {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ================= Tech Stack Cards ================= */
+.vhr-tech-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.vhr-tech-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.vhr-tech-header {
+  margin-bottom: 12px;
+}
+
+.vhr-tech-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0284c7;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.vhr-tech-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.vhr-tech-card p {
+  font-size: 13.5px;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ================= Project Banner ================= */
+.vhr-project-banner {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #ffffff;
+  border-radius: 16px;
+  padding: 32px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.2);
+}
+
+.vhr-project-info {
+  max-width: 650px;
+}
+
+.vhr-project-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #38bdf8;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.vhr-project-info h3 {
+  font-size: 21px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.vhr-project-info p {
+  font-size: 14px;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.vhr-project-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.vhr-btn-project-kiosk {
+  background: #10b981;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.vhr-btn-project-kiosk:hover {
+  background: #059669;
+}
+
+.vhr-btn-project-dash {
+  background: #2563eb;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.vhr-btn-project-dash:hover {
+  background: #1d4ed8;
+}
+
+/* ================= Footer ================= */
+.vhr-simple-footer {
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  padding: 20px 0;
+  margin-top: auto;
+}
+
+.vhr-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #64748b;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.vhr-footer-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vhr-footer-links a {
+  color: #475569;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.vhr-footer-links a:hover {
+  color: #2563eb;
+}
+
+.vhr-divider {
+  color: #cbd5e1;
+}
+
+/* ================= Responsive ================= */
+@media (max-width: 1100px) {
+  .vhr-nav-menu {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .vhr-portal-grid {
+    grid-template-columns: 1fr;
+  }
+  .vhr-modules-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .vhr-flow-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .vhr-tech-grid {
+    grid-template-columns: 1fr;
+  }
+  .vhr-project-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .vhr-modules-grid {
+    grid-template-columns: 1fr;
+  }
+  .vhr-feature-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .vhr-role-tabs {
+    flex-direction: column;
+  }
+  .vhr-flow-steps {
+    grid-template-columns: 1fr;
+  }
+  .vhr-title {
+    font-size: 28px;
+  }
+  .vhr-nav-inner {
+    padding: 0 16px;
+  }
+  .vhr-simple-main {
+    padding: 28px 16px 40px 16px;
+  }
+  .vhr-footer-inner {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .vhr-feature-strip {
+    grid-template-columns: 1fr;
+  }
+}

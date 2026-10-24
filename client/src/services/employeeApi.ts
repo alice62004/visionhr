@@ -11,6 +11,11 @@ export const getEmployeeById = async (id: string | number): Promise<Employee> =>
   return data;
 };
 
+export const getNextEmployeeCode = async (): Promise<{ nextCode: string }> => {
+  const { data } = await axiosClient.get('/employees/next-code');
+  return data;
+};
+
 export const createEmployee = async (payload: Partial<Employee>): Promise<Employee> => {
   const { data } = await axiosClient.post('/employees', payload);
   return data;
@@ -74,3 +79,39 @@ export const deleteDepartment = async (id: string | number): Promise<{ message: 
   const { data } = await axiosClient.delete(`/departments/${id}`);
   return data;
 };
+
+export const getMyProfile = async (): Promise<Employee> => {
+  const { data } = await axiosClient.get('/employees/me/profile');
+  return data;
+};
+
+export const updateMyProfile = async (payload: Partial<Employee>): Promise<Employee> => {
+  const { data } = await axiosClient.put('/employees/me/profile', payload);
+  return data;
+};
+
+export interface WorkHistoryData {
+  employee: Employee;
+  attendance: any[];
+  leaves: any[];
+  overtimes: any[];
+}
+
+export const getMyWorkHistory = async (): Promise<WorkHistoryData> => {
+  const { data } = await axiosClient.get('/employees/me/work-history');
+  return data;
+};
+
+export const sendOnboardingEmail = async (payload: {
+  to: string;
+  employeeName: string;
+  employeeCode: string;
+  position?: string;
+  department?: string;
+  tempPassword?: string;
+  loginUrl?: string;
+}): Promise<{ success: boolean; message: string; previewUrl?: string; isConfigured?: boolean }> => {
+  const { data } = await axiosClient.post('/employees/send-onboarding-email', payload);
+  return data;
+};
+

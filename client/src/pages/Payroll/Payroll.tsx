@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getPayrolls } from '../../services/payrollApi';
 import Table, { Column } from '../../components/Table/Table';
 import { PayrollRecord } from '../../types';
+import { formatVND } from '../../utils/formatters';
 
 export default function Payroll() {
   const [payrolls, setPayrolls] = useState<PayrollRecord[]>([]);
@@ -13,11 +14,6 @@ export default function Payroll() {
       .catch(() => setPayrolls([]))
       .finally(() => setLoading(false));
   }, []);
-
-  const formatVND = (val: number | string) => {
-    const n = Number(val) || 0;
-    return n.toLocaleString('vi-VN') + ' đ';
-  };
 
   const columns: Column<PayrollRecord>[] = [
     { key: 'employeeName', label: 'Nhân viên' },

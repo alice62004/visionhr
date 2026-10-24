@@ -1,0 +1,31 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+skinparam roundcorner 10
+skinparam ParticipantPadding 25
+skinparam BoxPadding 15
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+
+actor "Người dùng\n(Admin / Nhân viên)" as User #E8F0FE
+participant "Giao diện\n(visionhr/client/src/pages/Login/Login.tsx)" as UI #FEF7E0
+participant "Hệ thống\n(visionhr/server/controllers/authController.js)" as System #E6F4EA
+database "CSDL\n(visionhr/tai_khoan)" as DB #FCE8E6
+
+autonumber 1 "<b>[00]</b>"
+
+User -> UI: 1. Nhập CCCD/email/SĐT + mật khẩu & bấm Đăng nhập
+UI -> System: 2. POST /api/auth/login (payload)
+System -> DB: 3. Truy vấn bảng tai_khoan theo CCCD/email/SĐT
+
+alt #lightgreen And(email, password)
+    DB -> DB: 4. So sánh mật khẩu bằng bcrypt
+    DB --> System: 5. Trả về thông tin user (bao gồm cả mật khẩu đã mã hoá)
+    System --> UI: 6. Trả về JWT token & thông tin role
+    UI --> User: 7. Điều hướng trang theo role tương ứng
+else #mistyrose [Xác thực thất bại (Sai tài khoản hoặc mật khẩu)]
+    System --> UI: 8. Trả về lỗi 401 Unauthorized
+    UI --> User: 9. Hiển thị thông báo lỗi đăng nhập
+end
+
+@enduml

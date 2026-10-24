@@ -3,19 +3,23 @@ import React from 'react';
 export interface Column<T = any> {
   key: string;
   label: string;
-  render?: (row: T) => React.ReactNode;
+  render?: (row: T, index?: number) => React.ReactNode;
 }
 
 export interface TableProps<T = any> {
   columns: Column<T>[];
   data: T[];
   emptyText?: string;
+  onRowClick?: (row: T) => void;
+  rowHoverBg?: string;
 }
 
 export default function Table<T extends Record<string, any>>({
   columns,
   data,
   emptyText = 'Không có dữ liệu',
+  onRowClick,
+  rowHoverBg = '#f8fafc',
 }: TableProps<T>) {
   return (
     <div
@@ -66,7 +70,29 @@ export default function Table<T extends Record<string, any>>({
             </tr>
           )}
           {data.map((row, idx) => (
-            <tr key={row.id ?? idx} style={{ borderBottom: idx === data.length - 1 ? 'none' : '1px solid #e5e7eb' }}>
+            <tr
+              key={row.id ?? idx}
+              onClick={(e) => {
+                if (onRowClick) {
+                  onRowClick(row);
+                }
+              }}
+              style={{
+                borderBottom: idx === data.length - 1 ? 'none' : '1px solid #e5e7eb',
+                cursor: onRowClick ? 'pointer' : 'default',
+                transition: 'background-color 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (onRowClick) {
+                  e.currentTarget.style.backgroundColor = rowHoverBg;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (onRowClick) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
               {columns.map((col) => (
                 <td
                   key={col.key}
@@ -75,7 +101,7 @@ export default function Table<T extends Record<string, any>>({
                     verticalAlign: 'middle',
                   }}
                 >
-                  {col.render ? col.render(row) : row[col.key]}
+                  {col.render ? col.render(row, idx) : row[col.key]}
                 </td>
               ))}
             </tr>

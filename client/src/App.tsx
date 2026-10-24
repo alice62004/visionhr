@@ -21,11 +21,18 @@ import AIHR from './pages/AIHR/AIHR';
 import AuditLog from './pages/AuditLog/AuditLog';
 import Settings from './pages/Settings/Settings';
 import UserList from './pages/Users/UserList';
+import HomePage from './pages/Home/HomePage';
+import MyProfile from './pages/MyProfile/MyProfile';
+import WorkHistory from './pages/WorkHistory/WorkHistory';
+import MySchedule from './pages/MySchedule/MySchedule';
+import ShiftScheduling from './pages/Shifts/ShiftScheduling';
+import Contracts from './pages/Contracts/Contracts';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
 
         <Route
@@ -37,6 +44,11 @@ export default function App() {
         >
           <Route path="/dashboard" element={<Dashboard />} />
 
+          {/* Cá nhân nhân viên */}
+          <Route path="/my-profile" element={<MyProfile />} />
+          <Route path="/my-schedule" element={<MySchedule />} />
+          <Route path="/work-history" element={<WorkHistory />} />
+
           <Route path="/users" element={
             <ProtectedRoute allowedRoles={['admin']}><UserList /></ProtectedRoute>
           } />
@@ -44,6 +56,7 @@ export default function App() {
           <Route path="/employees" element={
             <ProtectedRoute allowedRoles={['admin', 'hr', 'manager']}><EmployeeList /></ProtectedRoute>
           } />
+          <Route path="/contracts" element={<Contracts />} />
           <Route path="/employees/new" element={
             <ProtectedRoute allowedRoles={['admin', 'hr']}><EmployeeForm /></ProtectedRoute>
           } />
@@ -65,6 +78,9 @@ export default function App() {
           } />
           <Route path="/shifts" element={
             <ProtectedRoute allowedRoles={['admin', 'hr', 'manager']}><Shifts /></ProtectedRoute>
+          } />
+          <Route path="/shift-scheduling" element={
+            <ProtectedRoute allowedRoles={['admin', 'hr', 'manager']}><ShiftScheduling /></ProtectedRoute>
           } />
 
           <Route path="/attendance" element={<AttendanceList />} />
@@ -89,11 +105,9 @@ export default function App() {
           <Route path="/settings" element={
             <ProtectedRoute allowedRoles={['admin']}><Settings /></ProtectedRoute>
           } />
-
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

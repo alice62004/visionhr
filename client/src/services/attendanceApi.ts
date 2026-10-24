@@ -31,7 +31,11 @@ export const getAttendanceById = async (id: string | number): Promise<Attendance
   return data;
 };
 
-export const checkInWithFace = async ({ imageBase64 }: { imageBase64: string }): Promise<{ employeeName: string; time: string }> => {
-  const { data } = await axiosClient.post('/attendance/face-checkin', { imageBase64 });
+export const checkInWithFace = async (payload: {
+  imageBase64: string;
+  actionType?: 'auto' | 'check_in' | 'check_out';
+  shiftMode?: 'auto' | 'morning_in' | 'morning_out' | 'afternoon_in' | 'afternoon_out';
+}): Promise<any> => {
+  const { data } = await axiosClient.post('/attendance/face-checkin', payload);
   return data;
 };
